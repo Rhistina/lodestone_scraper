@@ -14,12 +14,15 @@ class LodestoneScraper:
     def make_request(self, url=None):
         return self.session.get(url)
 
+    '''
+    Returns a dictionary to represent Free Company data
+    '''
     def get_free_company(self, lodestone_id):
         url = self.lodestone_url + '/freecompany/%s/' % lodestone_id
         r = self.make_request(url)
         soup = BeautifulSoup(r.content, "lxml")
 
-        # save free company stuff here
+        # Information from Free Company Top
         fc_name = soup.find('span', {'class', 'txt_yellow'}).text
         fc_tag =  soup.select('.vm')[0].contents[-1]
         formed =  soup.select('tr td script')[0].text
@@ -30,6 +33,7 @@ class LodestoneScraper:
         rank = int(soup.find('tr', {'class', 'rank'}).select('td')[0].text.strip())
         slogan = soup.find(text='Company Slogan').parent.parent.select('td')[0].text
 
+        # TO DO - focus and seeking are not specified for our FC. What does this information look like for other FCs?
         focus = soup.find(text='Focus').parent.parent.select('td')[0].text.strip()
         seeking = soup.find(text='Seeking').parent.parent.select('td')[0].text.strip()
         active = soup.find(text='Active').parent.parent.select('td')[0].text.strip()
@@ -40,10 +44,15 @@ class LodestoneScraper:
         estate['address'] = estate_profile.select('p.mb10')[0].text
         estate['greeting'] = estate_profile.select('p.mb10')[1].text
 
+        # Information from Free Company > Members
         roster = []
+
+        # Make initial soup to figure out max number of Member pages for this Free Company
         url = self.lodestone_url + '/freecompany/%s/member' % lodestone_id
         r = self.make_request(url)
         soup = BeautifulSoup(r.content, "lxml")
+        total_member_pages =  soup.find("li", {"class", "next_all"}).find('a').get('href')[-1]
+
 
         def get_roster(self, page=1):
             url = self.lodestone_url + '/freecompany/%s/member' % lodestone_id
@@ -62,7 +71,7 @@ class LodestoneScraper:
                 }
                 roster.append(member)
 
-        total_member_pages =  soup.find("li", {"class", "next_all"}).find('a').get('href')[-1]
+        # For every member page, populate the Free Company roster
         for i in range(1, int(total_member_pages)+1):
             get_roster(self,i)
 
