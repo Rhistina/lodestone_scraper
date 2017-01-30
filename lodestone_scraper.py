@@ -15,7 +15,7 @@ class LodestoneScraper:
         return self.session.get(url)
 
     '''
-    Returns a dictionary to represent Free Company data
+    Returns a dictionary to represent Free Company data 
     '''
     def get_free_company(self, lodestone_id):
         url = self.lodestone_url + '/freecompany/%s/' % lodestone_id
