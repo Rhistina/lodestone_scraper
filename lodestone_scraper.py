@@ -19,7 +19,9 @@ class LodestoneScraper:
     '''
     def get_free_company(self, lodestone_id):
         url = self.lodestone_url + '/freecompany/%s/' % lodestone_id
+
         r = self.make_request(url)
+
         soup = BeautifulSoup(r.content, "lxml")
 
         # Information from Free Company Top
