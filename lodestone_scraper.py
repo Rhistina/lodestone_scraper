@@ -46,11 +46,11 @@ class LodestoneScraper:
 
         soap = BeautifulSoup(r.content, "lxml")
 
-        # TO DO make dictionary of useful character information
+        # TODO make dictionary of useful character information
         # also figure out if we can use this method in the get_free_company?
         char = {}
 
-        # for now just returns lodestone id. needs to return character dictionary
+        # TODO get_character needs to return character dictionary
         return lodestone_id
 
     '''
@@ -74,7 +74,7 @@ class LodestoneScraper:
         rank = int(soup.find('tr', {'class', 'rank'}).select('td')[0].text.strip())
         slogan = soup.find(text='Company Slogan').parent.parent.select('td')[0].text
 
-        # TO DO - focus and seeking are not specified for our FC. What does this information look like for other FCs?
+        # TODO - focus and seeking are not specified for our FC. What does this information look like for other FCs?
         focus = soup.find(text='Focus').parent.parent.select('td')[0].text.strip()
         seeking = soup.find(text='Seeking').parent.parent.select('td')[0].text.strip()
         active = soup.find(text='Active').parent.parent.select('td')[0].text.strip()
