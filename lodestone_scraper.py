@@ -39,6 +39,8 @@ class LodestoneScraper:
     '''
     def get_character(self, name, world):
         lodestone_id = self.search_character(name, world)
+        if not lodestone_id:
+            return {}
 
         url = self.lodestone_url + '/character/%s' % lodestone_id
 
