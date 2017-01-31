@@ -59,8 +59,25 @@ class LodestoneScraper:
             'lnclvl' : soup.find('div', {'class', 'ic_class_box'}).ul.li.find_next_sibling().find_next_sibling().find_next_sibling().text,
             'arclvl' : soup.find('div', {'class', 'ic_class_box'}).ul.li.find_next_sibling().find_next_sibling().find_next_sibling().find_next_sibling().text,
             'roglvl' : soup.find('div', {'class', 'ic_class_box'}).ul.li.find_next_sibling().find_next_sibling().find_next_sibling().find_next_sibling().find_next_sibling().text,
+            'cnjlvl' : soup.find('div', {'class', 'ic_class_box'}).find_next_sibling().ul.li.text,
+            'thmlvl' : soup.find('div', {'class', 'ic_class_box'}).find_next_sibling().ul.li.find_next_sibling().text,
+            'acnlvl' : soup.find('div', {'class', 'ic_class_box'}).find_next_sibling().ul.li.find_next_sibling().find_next_sibling().text,
+            'drklvl' : soup.find('div', {'class', 'ic_class_box2'}).ul.li.text,
+            'mchlvl' : soup.find('div', {'class', 'ic_class_box2'}).ul.li.find_next_sibling().text,
+            'astlvl' : soup.find('div', {'class', 'ic_class_box2'}).ul.li.find_next_sibling().find_next_sibling().text,          
+            'crplvl' : soup.find('div', {'class', 'ic_class_box2'}).find_next_sibling().ul.li.text,
+            'bsmlvl' : soup.find('div', {'class', 'ic_class_box2'}).find_next_sibling().ul.li.find_next_sibling().text,
+            'armlvl' : soup.find('div', {'class', 'ic_class_box2'}).find_next_sibling().ul.li.find_next_sibling().find_next_sibling().text,
+            'gsmlvl' : soup.find('div', {'class', 'ic_class_box2'}).find_next_sibling().ul.li.find_next_sibling().find_next_sibling().find_next_sibling().text,
+            'ltwlvl' : soup.find('div', {'class', 'ic_class_box2'}).find_next_sibling().ul.li.find_next_sibling().find_next_sibling().find_next_sibling().find_next_sibling().text,
+            'wvrlvl' : soup.find('div', {'class', 'ic_class_box2'}).find_next_sibling().ul.li.find_next_sibling().find_next_sibling().find_next_sibling().find_next_sibling().find_next_sibling().text,
+            'alclvl' : soup.find('div', {'class', 'ic_class_box2'}).find_next_sibling().ul.li.find_next_sibling().find_next_sibling().find_next_sibling().find_next_sibling().find_next_sibling().find_next_sibling().text,
+            'cullvl' : soup.find('div', {'class', 'ic_class_box2'}).find_next_sibling().ul.li.find_next_sibling().find_next_sibling().find_next_sibling().find_next_sibling().find_next_sibling().find_next_sibling().find_next_sibling().text,
+            'minlvl' : soup.find('div', {'class', 'ic_class_box2 mb0'}).ul.li.text,
+            'btnlvl' : soup.find('div', {'class', 'ic_class_box2 mb0'}).ul.li.find_next_sibling().text,
+            'fshlvl' : soup.find('div', {'class', 'ic_class_box2 mb0'}).ul.li.find_next_sibling().find_next_sibling().text
             }
-
+        
         # TODO get_character needs to return character dictionary
         return char
 
