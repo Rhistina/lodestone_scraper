@@ -15,7 +15,57 @@ class LodestoneScraper:
         return self.session.get(url)
 
     '''
-    Returns a dictionary to represent Free Company data 
+    Given a character's name and world, return their lodestone id
+    '''
+    def search_character(self, name, world):
+        url = self.lodestone_url + '/character/?q=%s&worldname=%s' % (name, world)
+
+        r = self.make_request(url)
+
+        soup = BeautifulSoup(r.content, "lxml")
+
+        char_data = soup.select('.player_name_area .player_name_gold a')
+
+        if not char_data:
+            return None
+
+        char_name = char_data[0].text
+        lodestone_id = char_data[0].get('href').split('/')[3]
+
+        return lodestone_id
+
+    '''
+    Given a character's name and world, return a dictionary representing character data
+    '''
+    def get_character(self, name, world):
+        lodestone_id = self.search_character(name, world)
+        if not lodestone_id:
+            return {}
+
+        url = self.lodestone_url + '/character/%s' % lodestone_id
+
+        r = self.make_request(url)
+
+        soup = BeautifulSoup(r.content, "lxml")
+
+        # TODO make dictionary of useful character information
+        # also figure out if we can use this method in the get_free_company?
+        char = {
+            'lodestone_id' : lodestone_id,
+            'name' : soup.find(id="breadcrumb").li.find_next_sibling().find_next_sibling().find_next_sibling().text,
+            'glalvl' : soup.find('div', {'class', 'ic_class_box'}).ul.li.text,
+            'pgllvl' : soup.find('div', {'class', 'ic_class_box'}).ul.li.find_next_sibling().text,
+            'mrdlvl' : soup.find('div', {'class', 'ic_class_box'}).ul.li.find_next_sibling().find_next_sibling().text,
+            'lnclvl' : soup.find('div', {'class', 'ic_class_box'}).ul.li.find_next_sibling().find_next_sibling().find_next_sibling().text,
+            'arclvl' : soup.find('div', {'class', 'ic_class_box'}).ul.li.find_next_sibling().find_next_sibling().find_next_sibling().find_next_sibling().text,
+            'roglvl' : soup.find('div', {'class', 'ic_class_box'}).ul.li.find_next_sibling().find_next_sibling().find_next_sibling().find_next_sibling().find_next_sibling().text,
+            }
+
+        # TODO get_character needs to return character dictionary
+        return char
+
+    '''
+    Returns a dictionary to represent Free Company data
     '''
     def get_free_company(self, lodestone_id):
         url = self.lodestone_url + '/freecompany/%s/' % lodestone_id
@@ -35,7 +85,7 @@ class LodestoneScraper:
         rank = int(soup.find('tr', {'class', 'rank'}).select('td')[0].text.strip())
         slogan = soup.find(text='Company Slogan').parent.parent.select('td')[0].text
 
-        # TO DO - focus and seeking are not specified for our FC. What does this information look like for other FCs?
+        # TODO - focus and seeking are not specified for our FC. What does this information look like for other FCs?
         focus = soup.find(text='Focus').parent.parent.select('td')[0].text.strip()
         seeking = soup.find(text='Seeking').parent.parent.select('td')[0].text.strip()
         active = soup.find(text='Active').parent.parent.select('td')[0].text.strip()
@@ -67,9 +117,11 @@ class LodestoneScraper:
 
             for m in member_data:
                 member = {
+                # This is hardcoded to Gilgamesh. Will probably have to split on '(' and take the first element
                 'name' :  m.contents[1].text.strip().replace('(Gilgamesh)', ''),
                 'rank' :  m.contents[3].text.strip(),
-                'lodestone_id' : self.lodestone_url + re.sub("/lodestone/", '', m.contents[1].select('a')[0].get('href'))
+                'lodestone_id': m.contents[1].select('a')[0].get('href').split('/')[3],
+                'lodestone_url' : self.lodestone_url + re.sub("/lodestone/", '', m.contents[1].select('a')[0].get('href'))
                 }
                 roster.append(member)
 
@@ -94,6 +146,7 @@ class LodestoneScraper:
         }
 
 test = LodestoneScraper()
-for key, values in (test.get_free_company(9232238498621208473)).items():
-    print (key, values)
-
+print (test.get_character("Oren Iishi", "Gilgamesh"))
+print (test.get_character("Abscissa Cartesia", "Gilgamesh"))
+#for key,value in test.get_free_company(9232238498621208473).items():
+#    print (key, ':', value)
