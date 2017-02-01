@@ -53,6 +53,12 @@ class LodestoneScraper:
         char = {
             'lodestone_id' : lodestone_id,
             'name' : soup.find(id="breadcrumb").li.find_next_sibling().find_next_sibling().find_next_sibling().text,
+            'race' : soup.find('div', {'class', 'chara_profile_title'}).text.split("/")[0].strip(),
+            'clan' : soup.find('div', {'class', 'chara_profile_title'}).text.split("/")[1].strip(),
+            'gender' : soup.find('div', {'class', 'chara_profile_title'}).text.split("/")[2].strip(),
+            'nameday' : soup.find('dd', {'class', 'txt_name'}).text,
+            'guardian' : soup.find_all('dd', {'class', 'txt_name'})[1].text,
+            'citystate' : soup.find('dl', {'class', 'chara_profile_box_info clearfix'}).find_next_sibling().text.split("\n")[4],
             'glalvl' : soup.find('div', {'class', 'ic_class_box'}).ul.li.text,
             'pgllvl' : soup.find('div', {'class', 'ic_class_box'}).ul.li.find_next_sibling().text,
             'mrdlvl' : soup.find('div', {'class', 'ic_class_box'}).ul.li.find_next_sibling().find_next_sibling().text,
