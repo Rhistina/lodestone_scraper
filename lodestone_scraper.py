@@ -89,7 +89,7 @@ class LodestoneScraper:
                 elif (i == 2):
                     clss['exp'] = entries[i].text
 
-                classes.append(job)
+                classes.append(clss)
 
         char = {
             'lodestone_id' : lodestone_id,
@@ -194,9 +194,9 @@ class LodestoneScraper:
         }
 
 test = LodestoneScraper()
-#print (test.get_character("Oren Iishi", "Gilgamesh"))
-#print (test.get_character("Abscissa Cartesia", "Gilgamesh"))
-for key,value in test.get_free_company(9227594161505438687).items():
-    print (key, ':', value)
-for key,value in test.get_free_company(9232238498621208473).items():
-    print (key, ':', value)
+print (test.get_character("Oren Iishi", "Gilgamesh"))
+print (test.get_character("Abscissa Cartesia", "Gilgamesh"))
+#for key,value in test.get_free_company(9227594161505438687).items():
+#    print (key, ':', value)
+#for key,value in test.get_free_company(9232238498621208473).items():
+#    print (key, ':', value)
