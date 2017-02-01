@@ -49,8 +49,16 @@ class LodestoneScraper:
 
         soup = BeautifulSoup(r.content, "lxml")
 
+        # Weapon Information
+        weapon = {
+            'category' : soup.find('div', id='param_class_info_area').find('p').text,
+            'name' : soup.find('div', id='param_class_info_area').select('h2')[0].text,
+            'ilvl' : int(soup.find('div', id='param_class_info_area').find('div', {'class', 'db-tooltip__item__level'}).text.split(' ')[2])
+        }
+
         equipment_list = []
-        tot_item_level = 0
+        tot_item_level = weapon.get('ilvl')
+        equipment_list.append(weapon)
 
         # Equipment Area
         for tag in list(set(soup.find_all('div', {'class', 'param_right_area'}))):
@@ -67,39 +75,21 @@ class LodestoneScraper:
                     tot_item_level += equipment['ilvl']
                     equipment_list.append(equipment)
 
-        avg_item_level = tot_item_level/len(equipment_list)
+        avg_item_level = int(tot_item_level/len(equipment_list))
 
-        classes =  {
-            'gla': soup.find_all('div', {'class', 'ic_class_box'})[0].ul.li.text,
-            'pgl': soup.find_all('div', {'class', 'ic_class_box'})[0].ul.find_all('li')[1].text,
-            'mrd': soup.find_all('div', {'class', 'ic_class_box'})[0].ul.find_all('li')[2].text,
-            'lnc': soup.find_all('div', {'class', 'ic_class_box'})[0].ul.find_all('li')[3].text,
-            'arc': soup.find_all('div', {'class', 'ic_class_box'})[0].ul.find_all('li')[4].text,
-            'rog': soup.find_all('div', {'class', 'ic_class_box'})[0].ul.find_all('li')[5].text,
-            'cnj': soup.find_all('div', {'class', 'ic_class_box'})[1].ul.find_all('li')[0].text,
-            'thm': soup.find_all('div', {'class', 'ic_class_box'})[1].ul.find_all('li')[1].text,
-            'acn': soup.find_all('div', {'class', 'ic_class_box'})[1].ul.find_all('li')[2].text,
-            'drk': soup.find_all('div', {'class', 'ic_class_box2'})[0].ul.find_all('li')[0].text,
-            'mch': soup.find_all('div', {'class', 'ic_class_box2'})[0].ul.find_all('li')[1].text,
-            'ast': soup.find_all('div', {'class', 'ic_class_box2'})[0].ul.find_all('li')[2].text,
-            'crp': soup.find_all('div', {'class', 'ic_class_box2'})[1].ul.find_all('li')[0].text,
-            'bsm': soup.find_all('div', {'class', 'ic_class_box2'})[1].ul.find_all('li')[1].text,
-            'arm': soup.find_all('div', {'class', 'ic_class_box2'})[1].ul.find_all('li')[2].text,
-            'gsm': soup.find_all('div', {'class', 'ic_class_box2'})[1].ul.find_all('li')[3].text,
-            'ltw': soup.find_all('div', {'class', 'ic_class_box2'})[1].ul.find_all('li')[4].text,
-            'wvr': soup.find_all('div', {'class', 'ic_class_box2'})[1].ul.find_all('li')[5].text,
-            'alc': soup.find_all('div', {'class', 'ic_class_box2'})[1].ul.find_all('li')[6].text,
-            'cul': soup.find_all('div', {'class', 'ic_class_box2'})[1].ul.find_all('li')[7].text,
-            'min': soup.find_all('div', {'class', 'ic_class_box2 mb0'})[0].ul.find_all('li')[0].text,
-            'btn': soup.find_all('div', {'class', 'ic_class_box2 mb0'})[0].ul.find_all('li')[1].text,
-            'fsh': soup.find_all('div', {'class', 'ic_class_box2 mb0'})[0].ul.find_all('li')[2].text
-        }
+        classes = []
+        for element in soup.find_all('table', {'class', 'class_list'}):
+            entries = element.find_all('td')
+            clss = {}
+            for i in range(0, len(entries)):
+                if (i == 0):
+                    clss['name'] = entries[i].text
+                elif (i == 1):
+                    clss['lvl'] = entries[i].text
+                elif (i == 2):
+                    clss['exp'] = entries[i].text
 
-        for key,value in classes.items():
-            if value == '-':
-                classes[key] = 0
-            else:
-                classes[key] = int(value)
+                classes.append(job)
 
         char = {
             'lodestone_id' : lodestone_id,
