@@ -48,40 +48,73 @@ class LodestoneScraper:
 
         soup = BeautifulSoup(r.content, "lxml")
 
-        # TODO make dictionary of useful character information
-        # also figure out if we can use this method in the get_free_company?
+        equipment_list = []
+        tot_item_level = 0
+
+        # Equipment Area
+        for tag in list(set(soup.find_all('div', {'class', 'param_right_area'}))):
+
+            # Each item in Equipment Area
+            for t in tag.find_all('div',{'class', 'db-tooltip__l_main'}):
+                equipment = {}
+                category = t.find('p', {'class', 'db-tooltip__item__category'})
+
+                if (category.text != 'Soul Crystal'):
+                    equipment['category'] = category.text
+                    equipment['name'] = t.select('h2')[0].text
+                    equipment['ilvl'] = int(t.find('div', {'class', 'db-tooltip__item__level'}).text.split(' ')[2])
+                    tot_item_level += equipment['ilvl']
+                    equipment_list.append(equipment)
+
+        avg_item_level = tot_item_level/len(equipment_list)
+
+        classes =  {
+            'gla': soup.find_all('div', {'class', 'ic_class_box'})[0].ul.li.text,
+            'pgl': soup.find_all('div', {'class', 'ic_class_box'})[0].ul.find_all('li')[1].text,
+            'mrd': soup.find_all('div', {'class', 'ic_class_box'})[0].ul.find_all('li')[2].text,
+            'lnc': soup.find_all('div', {'class', 'ic_class_box'})[0].ul.find_all('li')[3].text,
+            'arc': soup.find_all('div', {'class', 'ic_class_box'})[0].ul.find_all('li')[4].text,
+            'rog': soup.find_all('div', {'class', 'ic_class_box'})[0].ul.find_all('li')[5].text,
+            'cnj': soup.find_all('div', {'class', 'ic_class_box'})[1].ul.find_all('li')[0].text,
+            'thm': soup.find_all('div', {'class', 'ic_class_box'})[1].ul.find_all('li')[1].text,
+            'acn': soup.find_all('div', {'class', 'ic_class_box'})[1].ul.find_all('li')[2].text,
+            'drk': soup.find_all('div', {'class', 'ic_class_box2'})[0].ul.find_all('li')[0].text,
+            'mch': soup.find_all('div', {'class', 'ic_class_box2'})[0].ul.find_all('li')[1].text,
+            'ast': soup.find_all('div', {'class', 'ic_class_box2'})[0].ul.find_all('li')[2].text,
+            'crp': soup.find_all('div', {'class', 'ic_class_box2'})[1].ul.find_all('li')[0].text,
+            'bsm': soup.find_all('div', {'class', 'ic_class_box2'})[1].ul.find_all('li')[1].text,
+            'arm': soup.find_all('div', {'class', 'ic_class_box2'})[1].ul.find_all('li')[2].text,
+            'gsm': soup.find_all('div', {'class', 'ic_class_box2'})[1].ul.find_all('li')[3].text,
+            'ltw': soup.find_all('div', {'class', 'ic_class_box2'})[1].ul.find_all('li')[4].text,
+            'wvr': soup.find_all('div', {'class', 'ic_class_box2'})[1].ul.find_all('li')[5].text,
+            'alc': soup.find_all('div', {'class', 'ic_class_box2'})[1].ul.find_all('li')[6].text,
+            'cul': soup.find_all('div', {'class', 'ic_class_box2'})[1].ul.find_all('li')[7].text,
+            'min': soup.find_all('div', {'class', 'ic_class_box2 mb0'})[0].ul.find_all('li')[0].text,
+            'btn': soup.find_all('div', {'class', 'ic_class_box2 mb0'})[0].ul.find_all('li')[1].text,
+            'fsh': soup.find_all('div', {'class', 'ic_class_box2 mb0'})[0].ul.find_all('li')[2].text
+        }
+
+        for key,value in classes.items():
+            if value == '-':
+                classes[key] = 0
+            else:
+                classes[key] = int(value)
+
         char = {
             'lodestone_id' : lodestone_id,
-            'name' : soup.find(id="breadcrumb").li.find_next_sibling().find_next_sibling().find_next_sibling().text,
+            'name' : soup.find(id="breadcrumb").find_all('li')[3].text,
+            'classes' : classes,
+            'avg_item_level' : avg_item_level,
+            'current_equipment' : equipment_list,
             'race' : soup.find('div', {'class', 'chara_profile_title'}).text.split("/")[0].strip(),
             'clan' : soup.find('div', {'class', 'chara_profile_title'}).text.split("/")[1].strip(),
             'gender' : soup.find('div', {'class', 'chara_profile_title'}).text.split("/")[2].strip(),
             'nameday' : soup.find('dd', {'class', 'txt_name'}).text,
             'guardian' : soup.find_all('dd', {'class', 'txt_name'})[1].text,
-            'citystate' : soup.find('dl', {'class', 'chara_profile_box_info clearfix'}).find_next_sibling().text.split("\n")[4],
-            'glalvl' : soup.find('div', {'class', 'ic_class_box'}).ul.li.text,
-            'pgllvl' : soup.find('div', {'class', 'ic_class_box'}).ul.li.find_next_sibling().text,
-            'mrdlvl' : soup.find('div', {'class', 'ic_class_box'}).ul.li.find_next_sibling().find_next_sibling().text,
-            'lnclvl' : soup.find('div', {'class', 'ic_class_box'}).ul.li.find_next_sibling().find_next_sibling().find_next_sibling().text,
-            'arclvl' : soup.find('div', {'class', 'ic_class_box'}).ul.li.find_next_sibling().find_next_sibling().find_next_sibling().find_next_sibling().text,
-            'roglvl' : soup.find('div', {'class', 'ic_class_box'}).ul.li.find_next_sibling().find_next_sibling().find_next_sibling().find_next_sibling().find_next_sibling().text,
-            'cnjlvl' : soup.find('div', {'class', 'ic_class_box'}).find_next_sibling().ul.li.text,
-            'thmlvl' : soup.find('div', {'class', 'ic_class_box'}).find_next_sibling().ul.li.find_next_sibling().text,
-            'acnlvl' : soup.find('div', {'class', 'ic_class_box'}).find_next_sibling().ul.li.find_next_sibling().find_next_sibling().text,
-            'drklvl' : soup.find('div', {'class', 'ic_class_box2'}).ul.li.text,
-            'mchlvl' : soup.find('div', {'class', 'ic_class_box2'}).ul.li.find_next_sibling().text,
-            'astlvl' : soup.find('div', {'class', 'ic_class_box2'}).ul.li.find_next_sibling().find_next_sibling().text,          
-            'crplvl' : soup.find('div', {'class', 'ic_class_box2'}).find_next_sibling().ul.li.text,
-            'bsmlvl' : soup.find('div', {'class', 'ic_class_box2'}).find_next_sibling().ul.li.find_next_sibling().text,
-            'armlvl' : soup.find('div', {'class', 'ic_class_box2'}).find_next_sibling().ul.li.find_next_sibling().find_next_sibling().text,
-            'gsmlvl' : soup.find('div', {'class', 'ic_class_box2'}).find_next_sibling().ul.li.find_next_sibling().find_next_sibling().find_next_sibling().text,
-            'ltwlvl' : soup.find('div', {'class', 'ic_class_box2'}).find_next_sibling().ul.li.find_next_sibling().find_next_sibling().find_next_sibling().find_next_sibling().text,
-            'wvrlvl' : soup.find('div', {'class', 'ic_class_box2'}).find_next_sibling().ul.li.find_next_sibling().find_next_sibling().find_next_sibling().find_next_sibling().find_next_sibling().text,
-            'alclvl' : soup.find('div', {'class', 'ic_class_box2'}).find_next_sibling().ul.li.find_next_sibling().find_next_sibling().find_next_sibling().find_next_sibling().find_next_sibling().find_next_sibling().text,
-            'cullvl' : soup.find('div', {'class', 'ic_class_box2'}).find_next_sibling().ul.li.find_next_sibling().find_next_sibling().find_next_sibling().find_next_sibling().find_next_sibling().find_next_sibling().find_next_sibling().text,
-            'minlvl' : soup.find('div', {'class', 'ic_class_box2 mb0'}).ul.li.text,
-            'btnlvl' : soup.find('div', {'class', 'ic_class_box2 mb0'}).ul.li.find_next_sibling().text,
-            'fshlvl' : soup.find('div', {'class', 'ic_class_box2 mb0'}).ul.li.find_next_sibling().find_next_sibling().text
+            'citystate' : soup.find_all('dl', {'class', 'chara_profile_box_info clearfix'})[1].text.split("\n")[3],
+            'grandcompany' : soup.find_all('dl', {'class', 'chara_profile_box_info clearfix'})[2].text.split("\n")[3].split("/")[0],
+            'gcrank' : soup.find_all('dl', {'class', 'chara_profile_box_info clearfix'})[2].text.split("\n")[3].split("/")[1],
+            'fc' : soup.find_all('dl', {'class', 'chara_profile_box_info clearfix'})[3].text.split("\n")[11]
             }
         
         # TODO get_character needs to return character dictionary
