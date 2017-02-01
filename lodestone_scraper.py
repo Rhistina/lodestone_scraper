@@ -3,6 +3,7 @@ import requests
 from bs4 import BeautifulSoup
 import re
 import datetime
+import math
 
 
 class LodestoneScraper:
@@ -159,7 +160,8 @@ class LodestoneScraper:
         url = self.lodestone_url + '/freecompany/%s/member' % lodestone_id
         r = self.make_request(url)
         soup = BeautifulSoup(r.content, "lxml")
-        total_member_pages =  soup.find("li", {"class", "next_all"}).find('a').get('href')[-1]
+        total_member_pages =  soup.find("span", {"class", "total"}).text
+        total_member_pages =  math.ceil(int(total_member_pages)/50)
 
 
         def get_roster(self, page=1):
@@ -202,7 +204,9 @@ class LodestoneScraper:
         }
 
 test = LodestoneScraper()
-print (test.get_character("Oren Iishi", "Gilgamesh"))
-print (test.get_character("Abscissa Cartesia", "Gilgamesh"))
-#for key,value in test.get_free_company(9232238498621208473).items():
-#    print (key, ':', value)
+#print (test.get_character("Oren Iishi", "Gilgamesh"))
+#print (test.get_character("Abscissa Cartesia", "Gilgamesh"))
+for key,value in test.get_free_company(9227594161505438687).items():
+    print (key, ':', value)
+for key,value in test.get_free_company(9232238498621208473).items():
+    print (key, ':', value)
