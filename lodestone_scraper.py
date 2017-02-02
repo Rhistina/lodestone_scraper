@@ -91,6 +91,14 @@ class LodestoneScraper:
 
                 classes.append(clss)
 
+        mounts = []
+        for mount in soup.find_all('div', {'class', 'minion_box clearfix'})[0].find_all('a'):
+            mounts.append(mount['title'])
+
+        minions = []
+        for minion in soup.find_all('div', {'class', 'minion_box clearfix'})[1].find_all('a'):
+            minions.append(minion['title'])
+            
         char = {
             'lodestone_id' : lodestone_id,
             'name' : soup.find(id="breadcrumb").find_all('li')[3].text,
@@ -105,7 +113,9 @@ class LodestoneScraper:
             'citystate' : soup.find_all('dl', {'class', 'chara_profile_box_info clearfix'})[1].text.split("\n")[3],
             'grandcompany' : soup.find_all('dl', {'class', 'chara_profile_box_info clearfix'})[2].text.split("\n")[3].split("/")[0],
             'gcrank' : soup.find_all('dl', {'class', 'chara_profile_box_info clearfix'})[2].text.split("\n")[3].split("/")[1],
-            'fc' : soup.find_all('dl', {'class', 'chara_profile_box_info clearfix'})[3].text.split("\n")[11]
+            'fc' : soup.find_all('dl', {'class', 'chara_profile_box_info clearfix'})[3].text.split("\n")[11],
+            'mounts' : mounts,
+            'minions' : minions
             }
         
         # TODO get_character needs to return character dictionary
@@ -135,7 +145,7 @@ class LodestoneScraper:
         focus = []
         for element in soup.find(text='Focus').parent.parent.select('td')[0].find_all('li'):
             try:
-                foo = element['class'] == 'icon_off'
+                foo = element['class']
             except KeyError:
                 focus.append(element.img['title'])
 
@@ -145,7 +155,7 @@ class LodestoneScraper:
         seeking = []
         for element in soup.find(text='Seeking').parent.parent.select('td')[0].find_all('li'):
             try:
-                foo = element['class'] == 'icon_off'
+                foo = element['class']
             except KeyError:
                 seeking.append(element.img['title'])
 
@@ -212,14 +222,14 @@ class LodestoneScraper:
 
 test = LodestoneScraper()
 # Test for character info 
-#print (test.get_character("Oren Iishi", "Gilgamesh"))
+print (test.get_character("Oren Iishi", "Gilgamesh"))
 
 # Secondary Test for character info 
 #print (test.get_character("Abscissa Cartesia", "Gilgamesh"))
 
 # Test for a low pop FC with focus and seeking
-for key,value in test.get_free_company(9227594161505438687).items():
-    print (key, ':', value)
+#for key,value in test.get_free_company(9227594161505438687).items():
+#    print (key, ':', value)
 
 # Test for AC
 for key,value in test.get_free_company(9232238498621208473).items():
