@@ -132,9 +132,26 @@ class LodestoneScraper:
         rank = int(soup.find('tr', {'class', 'rank'}).select('td')[0].text.strip())
         slogan = soup.find(text='Company Slogan').parent.parent.select('td')[0].text
 
-        # TODO - focus and seeking are not specified for our FC. What does this information look like for other FCs?
-        focus = soup.find(text='Focus').parent.parent.select('td')[0].text.strip()
-        seeking = soup.find(text='Seeking').parent.parent.select('td')[0].text.strip()
+        focus = []
+        for element in soup.find(text='Focus').parent.parent.select('td')[0].find_all('li'):
+            try:
+                foo = element['class'] == 'icon_off'
+            except KeyError:
+                focus.append(element.img['title'])
+
+        if not focus:
+            focus = "None Specified"
+                
+        seeking = []
+        for element in soup.find(text='Seeking').parent.parent.select('td')[0].find_all('li'):
+            try:
+                foo = element['class'] == 'icon_off'
+            except KeyError:
+                seeking.append(element.img['title'])
+
+        if not seeking:
+            seeking = "None Specified"        
+
         active = soup.find(text='Active').parent.parent.select('td')[0].text.strip()
 
         estate = {}
@@ -166,7 +183,7 @@ class LodestoneScraper:
             for m in member_data:
                 member = {
                 # This is hardcoded to Gilgamesh. Will probably have to split on '(' and take the first element
-                'name' :  m.contents[1].text.strip().replace('(Gilgamesh)', ''),
+                'name' :  m.contents[1].text.partition("(")[0].strip(),
                 'rank' :  m.contents[3].text.strip(),
                 'lodestone_id': m.contents[1].select('a')[0].get('href').split('/')[3],
                 'lodestone_url' : self.lodestone_url + re.sub("/lodestone/", '', m.contents[1].select('a')[0].get('href'))
@@ -194,9 +211,16 @@ class LodestoneScraper:
         }
 
 test = LodestoneScraper()
-print (test.get_character("Oren Iishi", "Gilgamesh"))
-print (test.get_character("Abscissa Cartesia", "Gilgamesh"))
-#for key,value in test.get_free_company(9227594161505438687).items():
-#    print (key, ':', value)
-#for key,value in test.get_free_company(9232238498621208473).items():
-#    print (key, ':', value)
+# Test for character info 
+#print (test.get_character("Oren Iishi", "Gilgamesh"))
+
+# Secondary Test for character info 
+#print (test.get_character("Abscissa Cartesia", "Gilgamesh"))
+
+# Test for a low pop FC with focus and seeking
+for key,value in test.get_free_company(9227594161505438687).items():
+    print (key, ':', value)
+
+# Test for AC
+for key,value in test.get_free_company(9232238498621208473).items():
+    print (key, ':', value)
