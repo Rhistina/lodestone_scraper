@@ -88,17 +88,14 @@ class LodestoneScraper(object):
 
             for i in range(0, len(entries)):
                 entry = entries[i].text
-                if (i % 3 == 0 and entries[i].text != '') :
+                if (i % 3 == 0 and entry != '') :
                     clss['name'] = entry
-                elif (i %3 == 1 and entries[i].text != ''):
+                elif (i %3 == 1 and entry != ''):
                     clss['lvl'] = entry
-                elif (i % 3 == 2 and entries[i].text != ''):
+                elif (i % 3 == 2 and entry != ''):
                     clss['exp'] = entry
                     classes.append(clss)
                     clss = {}
-
-
-
 
 
         mounts = []
