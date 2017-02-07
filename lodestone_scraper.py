@@ -6,14 +6,17 @@ import datetime
 import math
 
 
-class LodestoneScraper:
+class LodestoneScraper(object):
 
-    domain = 'na.finalfantasyxiv.com'
-    lodestone_url = 'http://%s/lodestone/' % domain
-    session = requests.Session()
+    def __init__(self):
+        self.domain = 'na.finalfantasyxiv.com'
+        self.lodestone_url = 'http://%s/lodestone/' % self.domain
+        self.session = requests.Session()
+
 
     def make_request(self, url=None):
         return self.session.get(url)
+
 
     '''
     Given a character's name and world, return their lodestone id
@@ -34,6 +37,7 @@ class LodestoneScraper:
         lodestone_id = char_data[0].get('href').split('/')[3]
 
         return lodestone_id
+
 
     '''
     Given a character's name and world, return a dictionary representing character data
@@ -81,15 +85,21 @@ class LodestoneScraper:
         for element in soup.find_all('table', {'class', 'class_list'}):
             entries = element.find_all('td')
             clss = {}
-            for i in range(0, len(entries)):
-                if (i == 0):
-                    clss['name'] = entries[i].text
-                elif (i == 1):
-                    clss['lvl'] = entries[i].text
-                elif (i == 2):
-                    clss['exp'] = entries[i].text
 
-                classes.append(clss)
+            for i in range(0, len(entries)):
+                entry = entries[i].text
+                if (i % 3 == 0 and entries[i].text != '') :
+                    clss['name'] = entry
+                elif (i %3 == 1 and entries[i].text != ''):
+                    clss['lvl'] = entry
+                elif (i % 3 == 2 and entries[i].text != ''):
+                    clss['exp'] = entry
+                    classes.append(clss)
+                    clss = {}
+
+
+
+
 
         mounts = []
         for mount in soup.find_all('div', {'class', 'minion_box clearfix'})[0].find_all('a'):
@@ -117,9 +127,8 @@ class LodestoneScraper:
             'mounts' : mounts,
             'minions' : minions
             }
-        
-        # TODO get_character needs to return character dictionary
         return char
+
 
     '''
     Returns a dictionary to represent Free Company data
@@ -135,7 +144,7 @@ class LodestoneScraper:
         fc_name = soup.find('span', {'class', 'txt_yellow'}).text
         fc_tag =  soup.select('.vm')[0].contents[-1]
         formed =  soup.select('tr td script')[0].text
-        formated_formed_date = str(datetime.datetime.fromtimestamp(int(re.search(r'ldst_strftime\(([0-9]+),', formed).group(1))))
+        formated_formed_date = datetime.datetime.fromtimestamp(int(re.search(r'ldst_strftime\(([0-9]+),', formed).group(1)))
 
         grand_company = soup.find('div', {'class', 'crest_id centering_h'}).text.split(' ')[0].strip()
         grand_company_standing = soup.find('div', {'class', 'crest_id centering_h'}).text.split(' ')[1].split('\n')[0]
@@ -220,17 +229,23 @@ class LodestoneScraper:
             'estate' : estate
         }
 
-test = LodestoneScraper()
-# Test for character info 
-print (test.get_character("Oren Iishi", "Gilgamesh"))
 
-# Secondary Test for character info 
-#print (test.get_character("Abscissa Cartesia", "Gilgamesh"))
+if __name__ == "__main__":
+    test = LodestoneScraper()
+    test.get_free_company(9227594161505438687).items()
+    # Test for character info
+    for i in test.get_character("Oren Iishi", "Gilgamesh")['classes']:
+        print (i)
 
-# Test for a low pop FC with focus and seeking
-#for key,value in test.get_free_company(9227594161505438687).items():
-#    print (key, ':', value)
 
-# Test for AC
-for key,value in test.get_free_company(9232238498621208473).items():
-    print (key, ':', value)
+    # Secondary Test for character info
+    #print (test.get_character("Abscissa Cartesia", "Gilgamesh"))
+
+    # Test for a low pop FC with focus and seeking
+    #for key,value in test.get_free_company(9227594161505438687).items():
+    #    print (key, ':', value)
+
+    # Test for AC
+    #for key,value in test.get_free_company(9232238498621208473).items():
+     #   print (key, ':', value)
+
