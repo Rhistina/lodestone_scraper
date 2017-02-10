@@ -8,5 +8,5 @@ Retrieves information on Free Companies and characters
 ##Authors
 Rhistina Revilla (rhistina@gmail.com)
 
-#Contributors
+##Contributors
 AbscissaX (https://github.com/AbscissaX/)
