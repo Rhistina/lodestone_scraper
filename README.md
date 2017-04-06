@@ -1,12 +1,12 @@
 # lodestone_scraper
 
-##Description
+### Description
 A simple web scraper for the Final Fantasy XIV Lodestone page using Python 3.5+.
 
 Retrieves information on Free Companies and characters
 
-##Authors
+### Authors
 Rhistina Revilla (rhistina@gmail.com)
 
-##Contributors
+### Contributors
 AbscissaX (https://github.com/AbscissaX/)
