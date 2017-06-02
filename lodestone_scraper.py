@@ -22,7 +22,7 @@ class LodestoneScraper(object):
     Given a character's name and world, return their lodestone id
     '''
     def search_character(self, name, world):
-        url = self.lodestone_url + '/character/?q={}&worldname={}'.format(name, world)
+        url = '{}/character/?q={}&worldname={}'.format(self.lodestone_url,name, world)
 
         r = self.make_request(url)
 
@@ -102,16 +102,17 @@ class LodestoneScraper(object):
     Returns a dictionary to represent Free Company data
     '''
     def get_free_company(self, lodestone_id):
-        url = self.lodestone_url + '/freecompany/%s/' % lodestone_id
+        url = '{}/freecompany/{}/'.format(self.lodestone_url,lodestone_id)
 
         r = self.make_request(url)
+        print (url)
 
         soup = BeautifulSoup(r.content, "lxml")
 
         # Information from Free Company Top
-        fc_name = soup.find('span', {'class', 'txt_yellow'}).text
-        fc_tag =  soup.select('.vm')[0].contents[-1]
-        formed =  soup.select('tr td script')[0].text
+        fc_name = soup.find(class_='freecompany__text__name').text
+        fc_tag = soup.select('p.freecompany__text.freecompany__text__tag')[0].text
+        formed =  soup.select('p.freecompany__text script')[0]
         formated_formed_date = datetime.datetime.fromtimestamp(int(re.search(r'ldst_strftime\(([0-9]+),', formed).group(1)))
 
         grand_company = soup.find('div', {'class', 'crest_id centering_h'}).text.split(' ')[0].strip()
@@ -161,7 +162,7 @@ class LodestoneScraper(object):
         def get_roster(self, page=1):
             url = self.lodestone_url + '/freecompany/%s/member' % lodestone_id
 
-            r = self.make_request(url + '?page=%s' % page)
+            r = self.make_request('{}?page={}'.format(url,page))
 
             soup = BeautifulSoup(r.content, "lxml")
 
@@ -199,7 +200,7 @@ class LodestoneScraper(object):
 
 if __name__ == "__main__":
     test = LodestoneScraper()
-    result = test.get_character("Oren Iishi", "Gilgamesh")
+    result = test.get_free_company(9232238498621208473)
     print(result)
 
 
