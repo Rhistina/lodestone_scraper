@@ -10,32 +10,30 @@ class LodestoneScraper(object):
 
     def __init__(self):
         self.domain = 'na.finalfantasyxiv.com'
-        self.lodestone_url = 'http://%s/lodestone/' % self.domain
+        self.lodestone_url = 'http://{}/lodestone/'.format(self.domain)
         self.session = requests.Session()
 
 
     def make_request(self, url=None):
-        return self.session.get(url)
+        return self.session.get(url, headers={"User-Agent": "Requests"})
 
 
     '''
     Given a character's name and world, return their lodestone id
     '''
     def search_character(self, name, world):
-        url = self.lodestone_url + '/character/?q=%s&worldname=%s' % (name, world)
+        url = self.lodestone_url + '/character/?q={}&worldname={}'.format(name, world)
 
         r = self.make_request(url)
 
         soup = BeautifulSoup(r.content, "lxml")
 
-        char_data = soup.select('.player_name_area .player_name_gold a')
+        char_data = soup.select('.entry__link')
 
         if not char_data:
             return None
 
-        char_name = char_data[0].text
         lodestone_id = char_data[0].get('href').split('/')[3]
-
         return lodestone_id
 
 
@@ -48,82 +46,55 @@ class LodestoneScraper(object):
             return {}
 
         url = self.lodestone_url + '/character/%s' % lodestone_id
-
         r = self.make_request(url)
 
         soup = BeautifulSoup(r.content, "lxml")
 
-        # Weapon Information
-        weapon = {
-            'category' : soup.find('div', id='param_class_info_area').find('p').text,
-            'name' : soup.find('div', id='param_class_info_area').select('h2')[0].text,
-            'ilvl' : int(soup.find('div', id='param_class_info_area').find('div', {'class', 'db-tooltip__item__level'}).text.split(' ')[2])
-        }
+        # TO DO calculate average item level
+        item_names = [item.text for item in soup.find_all(class_='db-tooltip__item__name')]
+        item_levels = [ilvl.text for ilvl in soup.find_all(class_='db-tooltip__item__level')]
+        item_categories = [category.text for category in soup.find_all(class_='db-tooltip__item__category')]
+        equipment = [item for item in set(zip(item_names,item_levels,item_categories))]
 
-        equipment_list = []
-        tot_item_level = weapon.get('ilvl')
-        equipment_list.append(weapon)
+        job_names = [name.text for name in soup.find_all('div', class_='character__job__name')]
+        job_levels = [level.text for level in soup.find_all('div', class_='character__job__level')]
+        job_exps = [exp.text for exp in soup.find_all('div', class_='character__job__exp')]
+        jobs = [job for job in zip(job_names, job_levels, job_exps)]
 
-        # Equipment Area
-        for tag in list(set(soup.find_all('div', {'class', 'param_right_area'}))):
+        mount_section = soup.find('div', class_='character__mounts')
+        mounts = mount_section.find_all(attrs={'data-tooltip':True})
+        mounts = [mount['data-tooltip'] for mount in mounts]
 
-            # Each item in Equipment Area
-            for t in tag.find_all('div',{'class', 'db-tooltip__l_main'}):
-                equipment = {}
-                category = t.find('p', {'class', 'db-tooltip__item__category'})
+        minion_section = soup.find('div', class_='character__minion')
+        minions = minion_section.find_all(attrs={'data-tooltip':True})
+        minions = [minion['data-tooltip'] for minion in minions]
 
-                if (category.text != 'Soul Crystal'):
-                    equipment['category'] = category.text
-                    equipment['name'] = t.select('h2')[0].text
-                    equipment['ilvl'] = int(t.find('div', {'class', 'db-tooltip__item__level'}).text.split(' ')[2])
-                    tot_item_level += equipment['ilvl']
-                    equipment_list.append(equipment)
+        detail_section = soup.find('div', class_='character__profile__data__detail')
+        titles = [title.text for title in detail_section.find_all(attrs={'character-block__title'})]
+        details = [detail.text for detail in detail_section.find_all(attrs={'character-block__name'})]
 
-        avg_item_level = int(tot_item_level/len(equipment_list))
-
-        classes = []
-        for element in soup.find_all('table', {'class', 'class_list'}):
-            entries = element.find_all('td')
-            clss = {}
-
-            for i in range(0, len(entries)):
-                entry = entries[i].text
-                if (i % 3 == 0 and entry != '') :
-                    clss['name'] = entry
-                elif (i %3 == 1 and entry != ''):
-                    clss['lvl'] = entry
-                elif (i % 3 == 2 and entry != ''):
-                    clss['exp'] = entry
-                    classes.append(clss)
-                    clss = {}
-
-
-        mounts = []
-        for mount in soup.find_all('div', {'class', 'minion_box clearfix'})[0].find_all('a'):
-            mounts.append(mount['title'])
-
-        minions = []
-        for minion in soup.find_all('div', {'class', 'minion_box clearfix'})[1].find_all('a'):
-            minions.append(minion['title'])
-            
         char = {
             'lodestone_id' : lodestone_id,
-            'name' : soup.find(id="breadcrumb").find_all('li')[3].text,
-            'classes' : classes,
-            'avg_item_level' : avg_item_level,
-            'current_equipment' : equipment_list,
-            'race' : soup.find('div', {'class', 'chara_profile_title'}).text.split("/")[0].strip(),
-            'clan' : soup.find('div', {'class', 'chara_profile_title'}).text.split("/")[1].strip(),
-            'gender' : soup.find('div', {'class', 'chara_profile_title'}).text.split("/")[2].strip(),
-            'nameday' : soup.find('dd', {'class', 'txt_name'}).text,
-            'guardian' : soup.find_all('dd', {'class', 'txt_name'})[1].text,
-            'citystate' : soup.find_all('dl', {'class', 'chara_profile_box_info clearfix'})[1].text.split("\n")[3],
-            'grandcompany' : soup.find_all('dl', {'class', 'chara_profile_box_info clearfix'})[2].text.split("\n")[3].split("/")[0],
-            'gcrank' : soup.find_all('dl', {'class', 'chara_profile_box_info clearfix'})[2].text.split("\n")[3].split("/")[1],
-            'fc' : soup.find_all('dl', {'class', 'chara_profile_box_info clearfix'})[3].text.split("\n")[11],
+            'name' : name,
+            'jobs' : jobs,
+            # TO DO
+            # 'avg_item_level' : avg_item_level,
+            'current_gear' : equipment,
+            'race' : details[0].split('/')[0],
+            # TO DO
+            # Break apart race and clan
+            'clan' : details[0].split('/')[1],
+            'gender' : details[0].split('/')[1],
+            'nameday' : detail_section.find(attrs={'character-block__birth'}),
+            'guardian' : details[1],
+            'citystate' : details[2],
+            'grandcompany' : details[3].split(" / ")[0],
+            'gcrank' : details[3].split(" / ")[1],
+            'fc' : detail_section.find(attrs={'character__freecompany__name'}).find('a').text,
             'mounts' : mounts,
             'minions' : minions
             }
+
         return char
 
 
@@ -226,23 +197,9 @@ class LodestoneScraper(object):
             'estate' : estate
         }
 
-
 if __name__ == "__main__":
     test = LodestoneScraper()
-    test.get_free_company(9227594161505438687).items()
-    # Test for character info
-    for i in test.get_character("Oren Iishi", "Gilgamesh")['classes']:
-        print (i)
+    result = test.get_character("Oren Iishi", "Gilgamesh")
+    print(result)
 
-
-    # Secondary Test for character info
-    #print (test.get_character("Abscissa Cartesia", "Gilgamesh"))
-
-    # Test for a low pop FC with focus and seeking
-    #for key,value in test.get_free_company(9227594161505438687).items():
-    #    print (key, ':', value)
-
-    # Test for AC
-    #for key,value in test.get_free_company(9232238498621208473).items():
-     #   print (key, ':', value)
 
