@@ -113,7 +113,7 @@ class LodestoneScraper(object):
         fc_name = soup.find(class_='freecompany__text__name').text
         fc_tag = soup.select('p.freecompany__text.freecompany__text__tag')[0].text
         formed =  soup.select('p.freecompany__text script')[0]
-        formated_formed_date = datetime.datetime.fromtimestamp(int(re.search(r'ldst_strftime\(([0-9]+),', formed).group(1)))
+        formated_formed_date = 'test' #datetime.datetime.fromtimestamp(int(re.search(r'ldst_strftime\(([0-9]+),', formed).group(1)))
 
         grand_company = soup.find('div', {'class', 'crest_id centering_h'}).text.split(' ')[0].strip()
         grand_company_standing = soup.find('div', {'class', 'crest_id centering_h'}).text.split(' ')[1].split('\n')[0]
