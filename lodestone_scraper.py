@@ -1,27 +1,364 @@
-#lodestone_scraper
 import requests
 from bs4 import BeautifulSoup
 import re
 import datetime
 import math
+import json
+import pandas as pd
+from logging import getLogger
+from pprint import pprint
 
+gender_map = {'\u2642' : 'Male', '\u2640' : 'Female'}
 
-class LodestoneScraper(object):
+json_test = {
+    "citystate": "Ul'dah",
+    "clan": " \u2640",
+    "current_gear": [
+        [
+            "Augmented Shire Custodian's Circlet",
+            "Item Level 270",
+            "Head"
+        ],
+        [
+            "Augmented Shire Custodian's Earrings",
+            "Item Level 270",
+            "Earrings"
+        ],
+        [
+            "Alexandrian Neckband of Fending",
+            "Item Level 270",
+            "Necklace"
+        ],
+        [
+            "Alexandrian Sollerets of Fending",
+            "Item Level 270",
+            "Feet"
+        ],
+        [
+            "Augmented Shire Custodian's Ring",
+            "Item Level 270",
+            "Ring"
+        ],
+        [
+            "Alexandrian Belt of Fending",
+            "Item Level 270",
+            "Waist"
+        ],
+        [
+            "Alexandrian Gauntlets of Fending",
+            "Item Level 270",
+            "Hands"
+        ],
+        [
+            "Alexandrian Ring of Fending",
+            "Item Level 270",
+            "Ring"
+        ],
+        [
+            "Soul of the Dark Knight",
+            "Item Level 30",
+            "Soul Crystal"
+        ],
+        [
+            "Augmented Shire Custodian's Bracelet",
+            "Item Level 270",
+            "Bracelets"
+        ],
+        [
+            "Augmented Shire Greatsword",
+            "Item Level 270",
+            "Dark Knight's Arm"
+        ],
+        [
+            "Alexandrian Mail of Fending",
+            "Item Level 270",
+            "Body"
+        ],
+        [
+            "Alexandrian Breeches of Fending",
+            "Item Level 270",
+            "Legs"
+        ]
+    ],
+    "fc": "Ascended",
+    "gcrank": "Second Storm Lieutenant",
+    "gender": " \u2640",
+    "grandcompany": "Maelstrom",
+    "guardian": "Nald'thal, the Traders",
+    "jobs": [
+        [
+            "Paladin",
+            "60",
+            "0 / 4470000"
+        ],
+        [
+            "Warrior",
+            "60",
+            "0 / 4470000"
+        ],
+        [
+            "Dark Knight",
+            "60",
+            "0 / 4470000"
+        ],
+        [
+            "Pugilist",
+            "15",
+            "3586 / 30500"
+        ],
+        [
+            "Dragoon",
+            "60",
+            "0 / 4470000"
+        ],
+        [
+            "Rogue",
+            "-",
+            "- / -"
+        ],
+        [
+            "Samurai",
+            "-",
+            "- / -"
+        ],
+        [
+            "White Mage",
+            "60",
+            "0 / 4470000"
+        ],
+        [
+            "Scholar",
+            "60",
+            "0 / 4470000"
+        ],
+        [
+            "Astrologian",
+            "54",
+            "557158 / 1872000"
+        ],
+        [
+            "Bard",
+            "60",
+            "0 / 4470000"
+        ],
+        [
+            "Machinist",
+            "-",
+            "- / -"
+        ],
+        [
+            "Thaumaturge",
+            "30",
+            "134305 / 162500"
+        ],
+        [
+            "Summoner",
+            "60",
+            "0 / 4470000"
+        ],
+        [
+            "Red Mage",
+            "-",
+            "- / -"
+        ],
+        [
+            "Carpenter",
+            "50",
+            "0 / 864000"
+        ],
+        [
+            "Blacksmith",
+            "50",
+            "136538 / 864000"
+        ],
+        [
+            "Armorer",
+            "50",
+            "51191 / 864000"
+        ],
+        [
+            "Goldsmith",
+            "50",
+            "68060 / 864000"
+        ],
+        [
+            "Leatherworker",
+            "50",
+            "11524 / 864000"
+        ],
+        [
+            "Weaver",
+            "50",
+            "11829 / 864000"
+        ],
+        [
+            "Alchemist",
+            "50",
+            "500 / 864000"
+        ],
+        [
+            "Culinarian",
+            "50",
+            "0 / 864000"
+        ],
+        [
+            "Miner",
+            "50",
+            "23942 / 864000"
+        ],
+        [
+            "Botanist",
+            "59",
+            "16265 / 3888000"
+        ],
+        [
+            "Fisher",
+            "-",
+            "- / -"
+        ]
+    ],
+    "lodestone_id": "2023059",
+    "minions": [
+        "Storm Hatchling",
+        "Black Chocobo Chick",
+        "Princely Hatchling",
+        "Chocobo Chick Courier",
+        "Midgardsormr",
+        "Baby Behemoth",
+        "Morbol Seedling",
+        "Baby Bun",
+        "Chigoe Larva",
+        "Wide-eyed Fawn",
+        "Baby Raptor",
+        "Wolf Pup",
+        "Coeurl Kitten",
+        "Tiny Tortoise",
+        "Dust Bunny",
+        "Pudgy Puk",
+        "Buffalo Calf",
+        "Cactuar Cutting",
+        "Smallshell",
+        "Infant Imp",
+        "Beady Eye",
+        "Fledgling Dodo",
+        "Coblyn Larva",
+        "Goobbue Sproutling",
+        "Bite-sized Pudding",
+        "Demon Brick",
+        "Slime Puddle",
+        "Kidragora",
+        "Onion Prince",
+        "Eggplant Knight",
+        "Garlic Jester",
+        "Tomato King",
+        "Mandragora Queen",
+        "Pumpkin Butler",
+        "Minute Mindflayer",
+        "Tight-beaked Parrot",
+        "Wind-up Brickman",
+        "Baby Opo-opo",
+        "Naughty Nanka",
+        "Mummy's Little Mummy",
+        "Demon Box",
+        "Unicolt",
+        "Owlet",
+        "Ugly Duckling",
+        "Lesser Panda",
+        "Page 63",
+        "Accompaniment Node",
+        "Korpokkur Kid",
+        "Morpho",
+        "Poro Roggo",
+        "Fenrir Pup",
+        "Mammet #003L",
+        "Cait Sith Doll",
+        "Wind-up Moogle",
+        "Wind-up Goblin",
+        "Wind-up Cursor",
+        "Wind-up Airship",
+        "Minion Of Light",
+        "Wind-up Leader",
+        "Wind-up Odin",
+        "Wind-up Gilgamesh",
+        "Wind-up Ultros",
+        "Toy Alexander",
+        "Nana Bear",
+        "Wind-up Warrior Of Light",
+        "Wind-up Firion",
+        "Wind-up Kain",
+        "Wind-up Shantotto",
+        "Magic Broom",
+        "Gold Rush Minecart",
+        "Wind-up Leviathan",
+        "Wind-up Ramuh",
+        "Wind-up Shiva",
+        "Wind-up Minfilia",
+        "Wind-up Thancred",
+        "Dress-up Thancred",
+        "Wind-up Moenbryda",
+        "Wind-up Alphinaud",
+        "Wind-up Cid",
+        "Wind-up Nanamo",
+        "Wind-up Louisoix",
+        "Wind-up Haurchefant",
+        "Wind-up Aymeric",
+        "Wind-up Edda"
+    ],
+    "mounts": [
+        "Company Chocobo",
+        "Ceremony Chocobo",
+        "Black Chocobo",
+        "Fat Chocobo",
+        "Magitek Armor",
+        "Gilded Magitek Armor",
+        "Coeurl",
+        "War Panther",
+        "Ahriman",
+        "Behemoth",
+        "Warlion",
+        "Griffin",
+        "Zu",
+        "Manacutter",
+        "Gobwalker",
+        "Witch's Broom",
+        "Arrhidaeus",
+        "Unicorn",
+        "Nightmare",
+        "Aithon",
+        "Xanthos",
+        "Gullfaxi",
+        "Markab",
+        "Boreas",
+        "Rose Lanner",
+        "Midgardsormr"
+    ],
+    "name": "Oren Iishi",
+    "nameday": "25th Sun of the 6th Umbral Moon",
+    "race": "Miqo'teSeeker of the Sun ",
+    "titles": [
+        "Race/Clan/Gender",
+        "Nameday",
+        "Guardian",
+        "City-state",
+        "Grand Company"
+    ]
+}
 
-    def __init__(self):
+class LodestoneScraper:
+
+    def __init__(self, debug=False):
         self.domain = 'na.finalfantasyxiv.com'
         self.lodestone_url = 'http://{}/lodestone/'.format(self.domain)
         self.session = requests.Session()
-
+        self.debug = debug
 
     def make_request(self, url=None):
         return self.session.get(url, headers={"User-Agent": "Requests"})
 
-
-    '''
-    Given a character's name and world, return their lodestone id
-    '''
     def search_character(self, name, world):
+        '''
+        Given a character's name and world, return their lodestone id
+        '''
         url = '{}/character/?q={}&worldname={}'.format(self.lodestone_url,name, world)
 
         r = self.make_request(url)
@@ -36,21 +373,38 @@ class LodestoneScraper(object):
         lodestone_id = char_data[0].get('href').split('/')[3]
         return lodestone_id
 
+    def get_soup(self, url):
 
-    '''
-    Given a character's name and world, return a dictionary representing character data
-    '''
+        logger = getLogger(__name__)
+        logger.info('get_soup method')
+        if self.debug:
+            logger.debug("Debug mode ON")
+            soup = json_test
+        else:
+            logger.info("Sending request to {}".format(url))
+            r = self.make_request(url)
+            if r.ok:
+                content = r.json()
+                soup = BeautifulSoup(content["content_html"], "lxml")
+
+        return soup
+
     def get_character(self, name, world):
+        '''
+        Given a character's name and world, return a JSON representing character data
+        '''
         lodestone_id = self.search_character(name, world)
         if not lodestone_id:
-            return {}
+            return json.dumps(['No Data Returned'])
 
         url = self.lodestone_url + '/character/%s' % lodestone_id
         r = self.make_request(url)
-
         soup = BeautifulSoup(r.content, "lxml")
 
-        # TO DO calculate average item level
+        # Remove br tags cus they suck
+        for br in soup.find_all('br'):
+            br.replace_with('/')
+
         item_names = [item.text for item in soup.find_all(class_='db-tooltip__item__name')]
         item_levels = [ilvl.text for ilvl in soup.find_all(class_='db-tooltip__item__level')]
         item_categories = [category.text for category in soup.find_all(class_='db-tooltip__item__category')]
@@ -70,22 +424,19 @@ class LodestoneScraper(object):
         minions = [minion['data-tooltip'] for minion in minions]
 
         detail_section = soup.find('div', class_='character__profile__data__detail')
-        titles = [title.text for title in detail_section.find_all(attrs={'character-block__title'})]
+        # titles = [title.text for title in detail_section.find_all(attrs={'character-block__title'})]
         details = [detail.text for detail in detail_section.find_all(attrs={'character-block__name'})]
 
         char = {
             'lodestone_id' : lodestone_id,
             'name' : name,
             'jobs' : jobs,
-            # TO DO
-            # 'avg_item_level' : avg_item_level,
+            'avg_item_level' : self.calculate_average_item_level(equipment),
             'current_gear' : equipment,
             'race' : details[0].split('/')[0],
-            # TO DO
-            # Break apart race and clan
             'clan' : details[0].split('/')[1],
-            'gender' : details[0].split('/')[1],
-            'nameday' : detail_section.find(attrs={'character-block__birth'}),
+            'gender' : gender_map.get(details[0].split('/')[2].strip()),
+            'nameday' : detail_section.find(attrs={'character-block__birth'}).text,
             'guardian' : details[1],
             'citystate' : details[2],
             'grandcompany' : details[3].split(" / ")[0],
@@ -95,17 +446,18 @@ class LodestoneScraper(object):
             'minions' : minions
             }
 
-        return char
+        result = json.dumps(char, indent=4, sort_keys=True)
+
+        return result
 
 
-    '''
-    Returns a dictionary to represent Free Company data
-    '''
-    def get_free_company(self, lodestone_id):
+    def get_free_company(self, lodestone_id) -> json :
+        '''
+        Returns a JSON to represent Free Company data
+        '''
         url = '{}/freecompany/{}/'.format(self.lodestone_url,lodestone_id)
 
         r = self.make_request(url)
-        print (url)
 
         soup = BeautifulSoup(r.content, "lxml")
 
@@ -198,9 +550,21 @@ class LodestoneScraper(object):
             'estate' : estate
         }
 
+    def calculate_average_item_level(self, equipement) -> float:
+        '''
+            Given a list of equipment, calculate the average item level
+        '''
+        category_to_exclude = ['Soul Crystal']
+
+        gear_df = pd.DataFrame(equipement, columns=['name', 'level', 'category'])
+        gear_df.level =  gear_df.level.str.split(' ').str.get(2).astype(int)
+
+        gear_to_exclude = gear_df.category.isin(category_to_exclude)
+        gear_df = gear_df.loc[~gear_to_exclude].reset_index()
+
+        return gear_df.level.mean()
+
 if __name__ == "__main__":
-    test = LodestoneScraper()
-    result = test.get_free_company(9232238498621208473)
+    test = LodestoneScraper(True)
+    result = test.get_character('Oren Iishi', 'Gilgamesh')
     print(result)
-
-
