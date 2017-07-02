@@ -1,4 +1,4 @@
-import requests
+import grequests as requests
 from bs4 import BeautifulSoup
 import re
 import datetime as dt
@@ -10,9 +10,22 @@ from pprint import pprint
 
 gender_map = {'\u2642' : 'Male', '\u2640' : 'Female'}
 
-
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
+logger.setLevel(logging.DEBUG)
+
+# create console handler and set level to debug
+ch = logging.StreamHandler()
+ch.setLevel(logging.DEBUG)
+
+# create formatter
+formatter = logging.Formatter('[%(asctime)s %(name)s][%(levelname)s] %(message)s')
+
+# add formatter to ch
+ch.setFormatter(formatter)
+
+# add ch to logger
+logger.addHandler(ch)
+
 
 class LodestoneScraper:
 
@@ -22,13 +35,19 @@ class LodestoneScraper:
         self.session = requests.Session()
         self.debug = debug
 
-    def make_request(self, url=None):
+    def make_request(self, url) :
         return self.session.get(url, headers={"User-Agent": "Requests"})
+
+    def make_requests(self, urls:list) -> BeautifulSoup:
+        rs = (requests.get(u) for u in urls)
+        responses = requests.map(rs)
+        return responses
 
     def search_character_id(self, name, world) -> str:
         '''
         Given a character's name and world, search for their lodestone id
         '''
+        logger.debug("Looking up lodestone id for player {} on {}".format(name, world))
         url = '{}/character/?q={}&worldname={}'.format(self.lodestone_url,name, world)
 
         r = self.make_request(url)
@@ -47,6 +66,7 @@ class LodestoneScraper:
         '''
         Given a free company's name and world, search for their lodestone id
         '''
+        logger.debug("Looking up id for Free Company {} on {}".format(name, world))
         url = '{}/freecompany/?q={}&worldname={}'.format(self.lodestone_url,name, world)
 
         r = self.make_request(url)
@@ -83,8 +103,10 @@ class LodestoneScraper:
         '''
         lodestone_id = self.search_character_id(name, world)
         if not lodestone_id:
-            return json.dumps(['No Data Returned'])
+            logger.debug("No character data found")
+            return {}
 
+        logger.debug("Getting character data . . . ")
         url = "{}character/{}".format(self.lodestone_url, lodestone_id)
         r = self.make_request(url)
         soup = BeautifulSoup(r.content, "lxml")
@@ -135,6 +157,22 @@ class LodestoneScraper:
             }
         return char_data
 
+    def get_roster(self, soup: BeautifulSoup) -> list:
+        member_data = soup.find_all('li', class_='entry')
+        logger.debug("Getting Free Company roster data . . . ")
+        roster = []
+        for m in member_data:
+            member_lodestone = member_data[0].find('a').get('href')
+
+            member = {
+                'name': m.find(class_='entry__name').text,
+                'rank': m.find('span').text,
+                'lodestone_id': member_data[0].find('a').get('href').split('/')[-2],
+                'lodestone_url': 'http://{}{}'.format(self.domain, member_lodestone)
+            }
+            roster.append(member)
+
+        return roster
 
     def get_free_company(self, name, world) -> dict :
         '''
@@ -143,12 +181,13 @@ class LodestoneScraper:
 
         lodestone_id = self.search_free_company_id(name, world)
         if not lodestone_id:
-            return json.dumps(['No Data Returned'])
+            logger.debug("No character data found")
+            return {}
+
+        logger.debug("Getting Free Company data . . . ")
 
         url = '{}/freecompany/{}/'.format(self.lodestone_url,lodestone_id)
-
         r = self.make_request(url)
-
         soup = BeautifulSoup(r.content, "lxml")
 
         fc_name = soup.find('p', class_='entry__freecompany__name').text
@@ -159,7 +198,7 @@ class LodestoneScraper:
         grand_company_standing = grand_company[1]
         slogan = soup.find('p', class_='freecompany__text__message').text
         rank = soup.find('h3', text='Rank').find_next().text
-        active_numbers = soup.find('h3', text='Active Members').find_next().text
+        active_numbers = int(soup.find('h3', text='Active Members').find_next().text)
         date_script_contents =  soup.select('p.freecompany__text script')[0].text
         extracted_unix_time = re.search(r'ldst_strftime\(([0-9]+),', date_script_contents).group(1)
 
@@ -208,36 +247,19 @@ class LodestoneScraper:
         # Information from Free Company > Members
         roster = []
 
-        # Make initial soup to figure out max number of Member pages for this Free Company
-        url = '{}/freecompany/{}/member/'.format(self.lodestone_url, lodestone_id)
-        r = self.make_request(url)
-        soup = BeautifulSoup(r.content, "lxml")
-        total_member_pages = int(soup.find(class_='btn__pager__current').text.split(' ')[-1])
+        total_member_pages = math.ceil(active_numbers/50)
 
-        def get_roster(self, page=1):
-            url = '{}/freecompany/{}/member'.format(self.lodestone_url, lodestone_id)
+        fc_member_url = '{}/freecompany/{}/member/'.format(self.lodestone_url, lodestone_id)
+        member_urls = ['{}?page={}'.format(fc_member_url, i) for i in range(1,total_member_pages+1)]
+        responses = self.make_requests(member_urls)
 
-            r = self.make_request('{}?page={}'.format(url, page))
+        soups = BeautifulSoup('<html><body></body></html>', 'lxml')
 
-            soup = BeautifulSoup(r.content, "lxml")
+        for r in responses:
+            soup = BeautifulSoup(r.content, 'lxml')
+            soups.body.append(soup.body)
 
-            member_data = soup.find_all('li', class_='entry')
-
-            for m in member_data:
-                member_lodestone = member_data[0].find('a').get('href')
-
-                member = {
-                # This is hardcoded to Gilgamesh. Will probably have to split on '(' and take the first element
-                'name' :  m.find(class_='entry__name').text,
-                'rank' :  m.find('span').text,
-                'lodestone_id': member_data[0].find('a').get('href').split('/')[-2],
-                'lodestone_url' : 'http://{}{}'.format(self.domain, member_lodestone)
-                }
-                roster.append(member)
-
-        # For every member page, populate the Free Company roster
-        for page in range(1, int(total_member_pages)+1):
-            get_roster(self, page)
+        roster = self.get_roster(soups)
 
         free_company_data = {
             'fc_name' : fc_name,
@@ -273,21 +295,10 @@ class LodestoneScraper:
         return gear_df.level.mean()
 
 if __name__ == "__main__":
-    test = LodestoneScraper(False)
-    logger.warning(pd.Timestamp.now())
-    ## Almost 2 seconds to scrape character information
-    # result = test.get_character('Oren Iishi', 'Gilgamesh')
-    ## Almost 10 seconds to scrape free company information
-    result = test.get_free_company('Ascended', 'Gilgamesh')
-
-    # Almost 6 seconds to simply request the main FC page, member once, and the 5 member pages
-    # requests.get('http://na.finalfantasyxiv.com/lodestone/freecompany/9232238498621208473/')
-    # requests.get('http://na.finalfantasyxiv.com/lodestone/freecompany/9232238498621208473/member/')
-    # requests.get('http://na.finalfantasyxiv.com/lodestone/freecompany/9232238498621208473/member/')
-    # requests.get('http://na.finalfantasyxiv.com/lodestone/freecompany/9232238498621208473/member/?page=2')
-    # requests.get('http://na.finalfantasyxiv.com/lodestone/freecompany/9232238498621208473/member/?page=3')
-    # requests.get('http://na.finalfantasyxiv.com/lodestone/freecompany/9232238498621208473/member/?page=4')
-    # requests.get('http://na.finalfantasyxiv.com/lodestone/freecompany/9232238498621208473/member/?page=5')
-
-    logger.warning(pd.Timestamp.now())
-
+    test = LodestoneScraper()
+    logger.debug("START")
+    # result = test.get_character('The Highlander', 'Gilgamesh')
+    fc = test.get_free_company('Ascended', 'Gilgamesh')
+    # urls = [member.get('lodestone_url') for member in fc.get('roster')]
+    # character_responses = test.make_requests(urls)
+    logger.debug("END")
