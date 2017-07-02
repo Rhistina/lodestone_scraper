@@ -2,9 +2,9 @@
 
 ### Description
 
-A web scraper for the site http://na.finalfantasyxiv.com/lodestone/ using Requests and BeautifulSoup and written in Python 3.5.
+A web scraper for the site http://na.finalfantasyxiv.com/lodestone/ that information on a player's character or an in-game free company.
 
-Returns information on a player's character or an in-game free company.
+Useful libraries in use are grequests, bs4, and pandas
 
 ### Usage
 Look up player info by providing name and server
