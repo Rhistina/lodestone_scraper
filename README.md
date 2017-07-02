@@ -10,8 +10,8 @@ Returns information on a player's character or an in-game free company.
 Look up player info by providing name and server
 ```bash
 >python lodestone_scraper player -n Oren Iishi -s Gilgamesh
-Look up free company info by provide name and server
 ```
+Look up free company info by provide name and server
 ```bash
 >python lodestone_scraper fc -n Ascended -s Gilgamesh
 ```
