@@ -18,7 +18,7 @@ ch = logging.StreamHandler()
 ch.setLevel(logging.DEBUG)
 
 # create formatter
-formatter = logging.Formatter('[%(asctime)s %(name)s][%(levelname)s] %(message)s')
+formatter = logging.Formatter('[%(asctime)s][%(name)s][%(levelname)s] %(message)s')
 
 # add formatter to ch
 ch.setFormatter(formatter)
@@ -81,7 +81,7 @@ class LodestoneScraper:
         lodestone_id = fc_data[0].get('href').split('/')[3]
         return lodestone_id
 
-    def get_soup(self, url) -> BeautifulSoup:
+    def _get_soup(self, url) -> BeautifulSoup:
 
         logger.info('get_soup method')
 
@@ -157,7 +157,7 @@ class LodestoneScraper:
             }
         return char_data
 
-    def get_roster(self, soup: BeautifulSoup) -> list:
+    def _get_roster(self, soup: BeautifulSoup) -> list:
         member_data = soup.find_all('li', class_='entry')
         logger.debug("Getting Free Company roster data . . . ")
         roster = []
@@ -197,7 +197,7 @@ class LodestoneScraper:
         grand_company_name = grand_company[0]
         grand_company_standing = grand_company[1]
         slogan = soup.find('p', class_='freecompany__text__message').text
-        rank = soup.find('h3', text='Rank').find_next().text
+        rank = int(soup.find('h3', text='Rank').find_next().text)
         active_numbers = int(soup.find('h3', text='Active Members').find_next().text)
         date_script_contents =  soup.select('p.freecompany__text script')[0].text
         extracted_unix_time = re.search(r'ldst_strftime\(([0-9]+),', date_script_contents).group(1)
@@ -259,7 +259,7 @@ class LodestoneScraper:
             soup = BeautifulSoup(r.content, 'lxml')
             soups.body.append(soup.body)
 
-        roster = self.get_roster(soups)
+        roster = self._get_roster(soups)
 
         free_company_data = {
             'fc_name' : fc_name,
